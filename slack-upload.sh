@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-
+#
+# ORIGINAL VERSION: 
+#
 # This bash script makes use of the Slack API to upload files.
 # I found this useful due to the fact that the attachement option
 # available in incoming webhooks seems to have an upper limit of
@@ -40,7 +42,10 @@ Usage() {
 # Default Vars
 API_URL='https://slack.com/api/files.upload'
 CURL_OPTS='-s'
-
+CHANNEL=
+FILENAME=
+SHORT_FILENAME=
+SLACK_TOKEN=
 # main
 
 while getopts :c:f:s:u:hm:n:vx: OPT; do
@@ -80,16 +85,42 @@ while getopts :c:f:s:u:hm:n:vx: OPT; do
   esac
 done
 
+if [[ -z "$CHANNEL" ]]; then
+    echo "Missing input: 'CHANNEL'"
+    Usage
+    exit 1
+fi
+if [[ -z "$FILENAME" ]]; then
+    echo "Missing input: 'FILENAME'"
+    Usage
+    exit 1
+fi
+if [[ -z "$SHORT_FILENAME" ]]; then
+    echo "Missing input: 'SHORT_FILENAME'"
+    Usage
+    exit 1
+fi
+if [[ -z "$SLACK_TOKEN" ]]; then
+    if [[ -f ~/.slack_token ]]; then
+        SLACK_TOKEN="$(cat ~/.slack_token)"
+    else
+        echo "Missing input: 'SLACK_TOKEN'"
+        Usage
+        exit 1
+    fi
+fi
+
 if [[ ( "${CHANNEL}" != "#"* ) && ( "${CHANNEL}" != "@"* ) ]]; then
   CHANNEL="#${CHANNEL}"
 fi
 
 # had to use eval to avoid strange whitespace behavior in options
-eval curl $CURL_OPTS \
+eval curl -s $CURL_OPTS \
   --form-string channels=${CHANNEL} \
   -F file=@${FILENAME} \
   -F filename=${SHORT_FILENAME} \
   -F token=${SLACK_TOKEN} \
   ${API_URL}
 
+echo ""
 exit 0
